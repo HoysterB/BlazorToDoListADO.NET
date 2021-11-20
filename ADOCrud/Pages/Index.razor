@@ -1,0 +1,200 @@
+﻿@page "/"
+@using ADOCrud.Interfaces
+@using ADOCrud.Models
+
+@inject IToDoRepository repo;
+
+<style>
+    .btn {
+        border-radius: 0px !important;
+    }
+</style>
+
+<div class="top-row">
+    <h5 class="text-center p-2 " style="background-color: black; color: whitesmoke;">ATIVIDADES</h5>
+</div>
+
+<div class="p-3">
+
+    <div class="row pl-3">
+        <button class="@btnClass" @onclick="MostrarCadastroDeToDos">@tituloBtn</button>
+        <button class="btn btn-success float-right ml-2" @onclick="AtividadesConcluidas">Atividades Concluídas</button>
+    </div>
+
+    <hr />
+
+    @if (visibilidadeTabela)
+    {
+
+        if (ListOfToDos.Count == 0)
+        {
+
+            <div class="top-row">
+                <h3 class="text-center">
+                    Nenhuma atividade cadastrada
+                </h3>
+            </div>
+
+        }
+        else
+        {
+            <div class="table-responsive-sm">
+                <table class="table table-sm">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th></th>
+                            <th>Nome</th>
+                            <th>Data</th>
+                            <th>Terminada</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var toDos in ListOfToDos)
+                        {
+                            @if (!toDosTrues && !toDos.Complete)
+                            {
+                                <tr>
+                                    <td>
+                                        <button class="btn btn-outline-success btn-sm" @onclick="() => ChangeComplete(toDos)">
+                                            <span class="oi oi-check"></span>
+                                        </button>
+                                    </td>
+                                    <td>@toDos.Name</td>
+                                    <td>@toDos.Time</td>
+                                    <td>@toDos.Complete</td>
+                                    <td>
+                                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteToDo(toDos.Id)">
+                                            X
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                            if (toDosTrues && toDos.Complete)
+                            {
+                                <tr>
+                                    <td>
+                                    </td>
+                                    <td>@toDos.Name</td>
+                                    <td>@toDos.Time</td>
+                                    <td>@toDos.Complete</td>
+                                    <td>
+                                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteToDo(toDos.Id)">
+                                            X
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+    else if (visibilidadeForm)
+    {
+        <div class="p-3">
+            <form>
+                <div class="row">
+                    <div class="form-group col-6">
+                        <label for="inputEmail4">Nome</label>
+                        <input type="text" class="form-control" @bind="toDo.Name">
+                    </div>
+
+                    <div class="form-group col-6">
+                        <label for="inputAddress">Data</label>
+                        <input type="text" class="form-control" @bind="toDo.Time">
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-primary btn-sm" @onclick="CadastrarToDo">Cadastrar Atvidade</button>
+            </form>
+        </div>
+
+    }
+
+    @if (cadastroSucesso)
+    {
+        <div class="alert alert-success" role="alert">
+            Nova atividade @tituloSucesso cadastrada com sucesso!
+        </div>
+    }
+
+    @if (excluidoSucesso)
+    {
+        <div class="alert alert-danger" role="alert">
+            Atividade removida com sucesso!
+        </div>
+    }
+
+</div>
+
+
+@code {
+    ToDo toDo = new ToDo();
+    List<ToDo> ListOfToDos = new List<ToDo>();
+    public bool visibilidadeTabela = true;
+    public bool visibilidadeForm = false;
+    public string tituloSucesso;
+    public bool toDosTrues = false;
+    public string tituloBtn = "Nova atividade";
+    public string btnClass = "btn btn-primary";
+    public bool cadastroSucesso = false;
+    public bool excluidoSucesso = false;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        GetAllToDos();
+    }
+
+    public void GetAllToDos()
+    {
+        ListOfToDos = repo.GetAll();
+    }
+
+    public void MostrarCadastroDeToDos()
+    {
+        visibilidadeTabela = !visibilidadeTabela;
+        visibilidadeForm = !visibilidadeForm;
+
+        if (visibilidadeForm)
+        {
+            tituloBtn = "Voltar";
+            btnClass = "btn btn-light";
+        }
+        else
+        {
+            tituloBtn = "Nova atividade";
+            btnClass = "btn btn-primary";
+        }
+    }
+
+    public void CadastrarToDo()
+    {
+        repo.Create(toDo);
+        visibilidadeTabela = true;
+        visibilidadeForm = false;
+        cadastroSucesso = true;
+        tituloSucesso = toDo.Name;
+        GetAllToDos();
+    }
+
+    public void DeleteToDo(int id)
+    {
+        excluidoSucesso = true;
+        repo.Delete(id);
+        GetAllToDos();
+    }
+
+    public void ChangeComplete(ToDo toDo)
+    {
+        toDo.Complete = !toDo.Complete;
+        repo.ChangeComplete(toDo);
+    }
+
+    public void AtividadesConcluidas()
+    {
+        toDosTrues = !toDosTrues;
+    }
+}
